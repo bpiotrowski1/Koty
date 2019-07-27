@@ -1,9 +1,9 @@
 package pl.bpiotrowski;
 
-public class Cat {
-    private String file;
+import com.google.gson.annotations.SerializedName;
+import lombok.Getter;
 
-    public String getFile() {
-        return file;
-    }
+public class Cat {
+    @SerializedName("file")
+    @Getter private String catUrl;
 }

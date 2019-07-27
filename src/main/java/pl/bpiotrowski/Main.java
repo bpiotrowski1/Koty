@@ -1,6 +1,9 @@
 package pl.bpiotrowski;
 
 import com.google.gson.Gson;
+import net.gpedro.integrations.slack.SlackApi;
+import net.gpedro.integrations.slack.SlackAttachment;
+import net.gpedro.integrations.slack.SlackMessage;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -8,42 +11,50 @@ import java.awt.image.ConvolveOp;
 import java.awt.image.Kernel;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
-import java.net.URLConnection;
 import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) throws IOException {
-        for (int i = 0; i < 10; i++) {
-            getBlurCatImage(getCat());
+        Cat cat = getRandomCat();
+        downloadCat(cat);
+        sendCat(cat);
+    }
+
+    public static Cat getRandomCat() throws IOException {
+        URL url = new URL("http://aws.random.cat/meow");
+        InputStream inputStream = url.openStream();
+        try (Scanner scan = new Scanner(inputStream)) {
+            String jsonText = scan.nextLine();
+            Gson gson = new Gson();
+            return gson.fromJson(jsonText, Cat.class);
         }
     }
 
-    public static Cat getCat() throws IOException {
-        URL url = new URL("http://aws.random.cat/meow");
-        URLConnection connection = url.openConnection();
-        connection.setRequestProperty("User-Agent", "Chrome");
-        Scanner scan = new Scanner(connection.getInputStream());
-        String jsonText = scan.nextLine();
-
-        Gson gson = new Gson();
-        return gson.fromJson(jsonText, Cat.class);
+    public static void sendCat(Cat cat) {
+        SlackApi api = new SlackApi("https://hooks.slack.com/services/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");
+        SlackAttachment attachment = new SlackAttachment("").setImageUrl(cat.getCatUrl());
+        System.out.println(attachment);
+        api.call(new SlackMessage(cat.getCatUrl()).addAttachments(attachment));
     }
 
-    public static void getCatImage(Cat cat) throws IOException {
-        URL url = new URL(cat.getFile());
-        String destName = "src/main/resources/cats" + cat.getFile().substring(cat.getFile().lastIndexOf("/"));
-        String ext = cat.getFile().substring(cat.getFile().length() - 3);
+    public static void downloadCat(Cat cat) throws IOException {
+        URL url = new URL(cat.getCatUrl());
+        String destName = "src/main/resources/cats" + cat.getCatUrl().substring(cat.getCatUrl().lastIndexOf("/"));
+        String ext = cat.getCatUrl().substring(cat.getCatUrl().lastIndexOf(".") + 1);
+
         BufferedImage image = ImageIO.read(url);
+
         File out = new File(destName);
         ImageIO.write(image, ext, out);
-        System.out.println("Image: " + destName + " height: " + image.getHeight() + " width: " + image.getWidth() + " size: " + out.length() / Math.pow(10, 6) + "mb");
+        System.out.println("Image: " + out.getName() + " height: " + image.getHeight() + " width: " + image.getWidth() + " size: " + out.length() / 1024 + "KB");
     }
 
     public static void getBlurCatImage(Cat cat) throws IOException {
-        URL url = new URL(cat.getFile());
-        String destName = "src/main/resources/cats" + cat.getFile().substring(cat.getFile().lastIndexOf("/"));
-        String ext = cat.getFile().substring(cat.getFile().length() - 3);
+        URL url = new URL(cat.getCatUrl());
+        String destName = "src/main/resources/cats" + cat.getCatUrl().substring(cat.getCatUrl().lastIndexOf("/"));
+        String ext = cat.getCatUrl().substring(cat.getCatUrl().length() - 3);
         BufferedImage image = ImageIO.read(url);
 
         int radius = 11;
@@ -56,7 +67,7 @@ public class Main {
         }
 
         Kernel kernel = new Kernel(size, size, data);
-        ConvolveOp op = new ConvolveOp(kernel, ConvolveOp.EDGE_NO_OP, null);
+        ConvolveOp op = new ConvolveOp(kernel, ConvolveOp.EDGE_ZERO_FILL, null);
         BufferedImage blurred = op.filter(image, null);
 
         File out = new File(destName);
