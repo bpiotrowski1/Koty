@@ -18,7 +18,7 @@ import java.util.Scanner;
 public class Main {
     public static void main(String[] args) throws IOException {
         Cat cat = getRandomCat();
-        downloadCat(cat);
+        //downloadCat(cat);
         sendCat(cat);
     }
 
@@ -34,8 +34,7 @@ public class Main {
 
     public static void sendCat(Cat cat) {
         SlackApi api = new SlackApi("https://hooks.slack.com/services/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");
-        SlackAttachment attachment = new SlackAttachment("").setImageUrl(cat.getCatUrl());
-        System.out.println(attachment);
+        SlackAttachment attachment = new SlackAttachment("").setImageUrl(cat.getCatUrl()).setColor("good");
         api.call(new SlackMessage(cat.getCatUrl()).addAttachments(attachment));
     }
 
