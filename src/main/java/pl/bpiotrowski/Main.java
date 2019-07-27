@@ -9,10 +9,9 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.awt.image.ConvolveOp;
 import java.awt.image.Kernel;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.URL;
+import java.util.Properties;
 import java.util.Scanner;
 
 public class Main {
@@ -32,8 +31,13 @@ public class Main {
         }
     }
 
-    public static void sendCat(Cat cat) {
-        SlackApi api = new SlackApi("https://hooks.slack.com/services/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");
+    public static void sendCat(Cat cat) throws IOException {
+        InputStream input = new FileInputStream("src/main/resources/slack.properties");
+        Properties properities = new Properties();
+        properities.load(input);
+        System.out.println(properities.getProperty("service"));
+
+        SlackApi api = new SlackApi(properities.getProperty("service"));
         SlackAttachment attachment = new SlackAttachment("").setImageUrl(cat.getCatUrl()).setColor("good");
         api.call(new SlackMessage(cat.getCatUrl()).addAttachments(attachment));
     }
